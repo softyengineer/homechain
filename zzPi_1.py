@@ -153,7 +153,7 @@ try:
 			# Blend
 			pwm_internal = (0.95 * pwm_internal) + (0.05 * pwm_output_local)
 			p.ChangeDutyCycle(pwm_internal)
-			if pwm_internal - pwm_output_local = 0:
+			if pwm_internal - pwm_output_local == 0:
 				pwm_has_changed = 0
 			# Debug
 			print "pwm_internal = " + pwm_internal
@@ -164,7 +164,7 @@ finally:	#?
 ################### python1.py contents ################### python1.py contents
 		
 		
-################### homechain/python_2.py contents ################### python_2.py contents
+################### homechain/python2.py contents ###################
 def on_message(client, userdata, message):
 	# On change detected modify pwm global value and set flag
 	pwm_output_local = message.payload.decode("utf-8")

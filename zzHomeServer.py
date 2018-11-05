@@ -122,3 +122,10 @@ subprocess.run(python1.py)
 subprocess.run(python2.py)
 sudo python python1.py & sudo python python2.py
 
+#Test
+import paho.mqtt.client as mqtt
+client = mqtt.Client("192.168.1.99")
+# Connect to broker
+client.connect("192.168.1.99")
+client.publish("home/ground/front_room/front_lights_rm", payload=30, qos="1", Retain="True")
+
