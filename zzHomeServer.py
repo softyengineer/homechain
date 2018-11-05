@@ -71,21 +71,13 @@ import paho.mqtt.client as mqtt
 import smtplib
 from email.mime.text import MIMEText
 from time import sleep
-gnd_front_lights = config.pwm_gnd_front_lights
+counter = config.pwm_gnd_front_lights
+pwm_gnd_front_lights_local = 0
+pwm_has_changed = 
 billionth_loop = config.billionth_loop
-## Local setup
-thisIP = config.broker_address_homeserver
-client = mqtt.Client(thisIP)
-# Connect to broker
-client.connect(thisIP)
-# Subscribe to topics
-client.subscribe("home/ground/front_room/front_lights")
-client.subscribe("home/ground/front_room/rear_lights")
-# Make action on message received
-client.on_message=on_message
 # On change detected modify pwm global value and set flag
 def on_message(client, userdata, message):
-	gnd_front_lights = message.payload.decode("utf-8")
+	counter = message.payload.decode("utf-8")
 	pwm_has_changed = 1
 def billionth_email():
 	smtp_ssl_host = 'mail.tomdwyer.co.uk'  # smtp.mail.yahoo.com
@@ -102,12 +94,21 @@ def billionth_email():
 	server.login(username, password)
 	server.sendmail(sender, targets, msg.as_string())
 	server.quit()
+## Local setup
+thisIP = config.broker_address_homeserver
+client = mqtt.Client()
+# Connect to broker
+client.connect("127.0.0.1", 1883, 60)
+# Subscribe to topics
+client.subscribe("home/ground/front_room/front_lights")
+client.subscribe("home/ground/front_room/rear_lights")
+# Make action on message received
+client.on_message=on_message
 # Main loop 2 execute forever
 while True:
-	if gnd_front_lights != pwm_gnd_front_lights_local:
-		pwm_gnd_front_lights_local = gnd_front_lights
-		client.publish("home/ground/front_room/front_lights_rm", payload=gnd_front_lights, qos="1", Retain="True")
-		pwm_gnd_front_lights_local = gnd_front_lights
+	if counter != pwm_gnd_front_lights_local:
+		client.publish("home/ground/front_room/front_lights_rm", payload=counter, qos=1, retain=True)
+		pwm_gnd_front_lights_local = counter
 		# On change reset flag
 		pwm_has_changed = 0
 		print pwm_gnd_front_lights_local
@@ -121,6 +122,7 @@ while True:
 subprocess.run(python1.py)
 subprocess.run(python2.py)
 sudo python python1.py & sudo python python2.py
+sudo python python_1.py & sudo python python_2.py
 ## https://learn.adafruit.com/diy-esp8266-home-security-with-lua-and-mqtt/configuring-mqtt-on-the-raspberry-pi
 #Test
 print("1. Import mqtt...")
@@ -138,7 +140,7 @@ print("4. Defining on_publish...")
 def on_publish():
         print("Message sent!")
 print("5. Establishing mqqt.Client...")
-client = mqtt.Client()
+client = mqtt.Client("127.0.0.1")
 print("6. Establishing on_connect callback...")
 client.on_connect = on_connect
 print("7. Establishing on_message callback...")
@@ -146,7 +148,8 @@ client.on_message = on_message
 print("7.1 Establishing on_publish callback...")
 client.on_publish = on_publish
 print("8. Connecting to client...")
-client.connect("iot.eclipse.org", 1883, 60)
+#client.connect("iot.eclipse.org", 1883, 60)
+client.connect("127.0.0.1", 1883, 60)
 print("9. Establishing topic...")
 topic = "home/ground/front_room/front_lights_rm"
 print("10. Publishing message topic...")
@@ -154,4 +157,5 @@ client.publish(topic, payload="30", qos=1, retain=True)
 print("11. Calling on_publish...")
 on_publish
 print("End")
+
 
