@@ -146,7 +146,7 @@ client.on_message = on_message
 print("7.1 Establishing on_publish callback...")
 client.on_publish = on_publish
 print("8. Connecting to client...")
-client.connect("192.168.1.99", 1883, 60)
+client.connect("iot.eclipse.org", 1883, 60)
 print("9. Establishing topic...")
 topic = "home/ground/front_room/front_lights_rm"
 print("10. Publishing message topic...")
@@ -154,3 +154,4 @@ client.publish(topic, payload="30", qos=1, retain=True)
 print("11. Calling on_publish...")
 on_publish
 print("End")
+
