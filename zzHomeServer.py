@@ -121,11 +121,36 @@ while True:
 subprocess.run(python1.py)
 subprocess.run(python2.py)
 sudo python python1.py & sudo python python2.py
-
+## https://learn.adafruit.com/diy-esp8266-home-security-with-lua-and-mqtt/configuring-mqtt-on-the-raspberry-pi
 #Test
+print("1. Import mqtt...")
 import paho.mqtt.client as mqtt
-client = mqtt.Client("192.168.1.99")
-# Connect to broker
-client.connect("192.168.1.99")
-client.publish("home/ground/front_room/front_lights_rm", payload=30, qos="1", Retain="True")
-
+print("2. Defining on_connect...")
+def on_connect(client, userdata, flags, rc):
+        print("Connected with result code "+str(rc))
+        # Subscribing in on_connect() means that if we lose the connection and reconnect then subscriptions wil$
+        client.subscribe("home/ground/front_room/front_lights")
+# The callback for when a PUBLISH message is received from the server.
+print("3. Defining on_message...")
+def on_message(client, userdata, msg):
+        print(msg.topic+" "+str(msg.payload))
+print("4. Defining on_publish...")
+def on_publish():
+        print("Message sent!")
+print("5. Establishing mqqt.Client...")
+client = mqtt.Client()
+print("6. Establishing on_connect callback...")
+client.on_connect = on_connect
+print("7. Establishing on_message callback...")
+client.on_message = on_message
+print("7.1 Establishing on_publish callback...")
+client.on_publish = on_publish
+print("8. Connecting to client...")
+client.connect("192.168.1.99", 1883, 60)
+print("9. Establishing topic...")
+topic = "home/ground/front_room/front_lights_rm"
+print("10. Publishing message topic...")
+client.publish(topic, payload="30", qos=1, retain=True)
+print("11. Calling on_publish...")
+on_publish
+print("End")

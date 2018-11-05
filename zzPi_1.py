@@ -43,7 +43,7 @@ broker_address_homeserver = "192.168.1.99"
 gain = 2
 ################### ~/homechain/config.py contents ################### config.py contents
 
-################### ~/homechain/python1.py contents ################### python1.py contents
+################### ~/homechain/python1.py contents
 ## Global setup
 import config
 from RPi import GPIO
@@ -224,3 +224,22 @@ sudo apt-get install python-pip
 
 # Start processes
 sudo python python1.py & sudo python python2.py
+
+
+#Test
+import paho.mqtt.client as mqtt
+def on_connect(client, userdata, flags, rc):
+	print("Connected with result code "+str(rc))
+	# Subscribing in on_connect() means that if we lose the connection and reconnect then subscriptions will be renewed.
+	client.subscribe("home/ground/front_room/front_lights_rm")
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, msg):
+	print(msg.topic+" "+str(msg.payload))
+def on_publish():
+	print("Message sent!")
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
+client.connect("192.168.1.101", 1883, 60)
+topic = "home/ground/front_room/front_lights"
+client.publish(topic, payload="30", qos=1, retain=True)
