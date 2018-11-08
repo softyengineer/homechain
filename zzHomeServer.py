@@ -16,8 +16,8 @@ import config
 counter = config.pwm_gnd_front_lights
 billionth_loop = config.billionth_loop
 pwm_has_changed = config.pwm_has_changed_front_lights
-from RPi import GPIO
 from time import sleep
+from RPi import GPIO
 clk = 17
 dt = 18
 butn = 27
@@ -73,7 +73,7 @@ from email.mime.text import MIMEText
 from time import sleep
 counter = config.pwm_gnd_front_lights
 pwm_gnd_front_lights_local = 0
-pwm_has_changed = 
+pwm_has_changed = 1
 billionth_loop = config.billionth_loop
 # On change detected modify pwm global value and set flag
 def on_message(client, userdata, message):
@@ -102,12 +102,14 @@ client.connect("127.0.0.1", 1883, 60)
 # Subscribe to topics
 client.subscribe("home/ground/front_room/front_lights")
 client.subscribe("home/ground/front_room/rear_lights")
+topic = "home/ground/front_room/front_lights_rm"
 # Make action on message received
 client.on_message=on_message
 # Main loop 2 execute forever
 while True:
 	if counter != pwm_gnd_front_lights_local:
-		client.publish("home/ground/front_room/front_lights_rm", payload=counter, qos=1, retain=True)
+		#client.publish("home/ground/front_room/front_lights_rm", payload=counter, qos=1, retain=True)
+		client.publish(topic, payload=1, qos=1, retain=True)
 		pwm_gnd_front_lights_local = counter
 		# On change reset flag
 		pwm_has_changed = 0
@@ -118,6 +120,8 @@ while True:
 	sleep(0.01)
 ################### ~/bin/homechain/python2.py contents ################### python2.py contents
 
+#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test
+#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test#Test
 # Start processes
 subprocess.run(python1.py)
 subprocess.run(python2.py)
@@ -130,7 +134,7 @@ import paho.mqtt.client as mqtt
 print("2. Defining on_connect...")
 def on_connect(client, userdata, flags, rc):
         print("Connected with result code "+str(rc))
-        # Subscribing in on_connect() means that if we lose the connection and reconnect then subscriptions wil$
+        # Subscribing in on_connect() means that if we lose the connection and reconnect then subscriptions will be rechecked
         client.subscribe("home/ground/front_room/front_lights")
 # The callback for when a PUBLISH message is received from the server.
 print("3. Defining on_message...")
@@ -158,4 +162,87 @@ print("11. Calling on_publish...")
 on_publish
 print("End")
 
+
+## Global setup
+import config
+import paho.mqtt.client as mqtt
+import smtplib
+from email.mime.text import MIMEText
+from time import sleep
+from RPi import GPIO
+clk = 17
+dt = 18
+butn = 27
+count = 1
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(clk, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(dt, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(butn, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+clkLastState = GPIO.input(clk)
+btnLastState = GPIO.input(butn)
+counter = config.pwm_gnd_front_lights
+pwm_gnd_front_lights_local = 0
+pwm_has_changed = 1
+billionth_loop = config.billionth_loop
+# On change detected modify pwm global value and set flag
+def on_message(client2, userdata, message):
+	counter = message.payload.decode("utf-8")
+	pwm_has_changed = 1
+def billionth_email():
+	smtp_ssl_host = 'mail.tomdwyer.co.uk'  # smtp.mail.yahoo.com
+	smtp_ssl_port = 465
+	username = 'homechain@tomdwyer.co.uk'
+	password = 'qhaHZUEZDHlz4PP6kavI'
+	sender = 'homechain@tomdwyer.co.uk'
+	targets = ['tom.uwe@gmail.com', 'tim@thedwyers.co.uk']
+	msg = MIMEText('One billion loops of code successfully run, Pi_Server.')
+	msg['Subject'] = 'Congratulations!'
+	msg['From'] = sender
+	msg['To'] = ', '.join(targets)
+	server = smtplib.SMTP_SSL(smtp_ssl_host, smtp_ssl_port)
+	server.login(username, password)
+	server.sendmail(sender, targets, msg.as_string())
+	server.quit()
+## Local setup
+thisIP = config.broker_address_homeserver
+client = mqtt.Client()
+client2 = mqtt.Client()
+# Connect to broker
+client.connect("127.0.0.1", 1883, 60)
+client2.connect("192.168.0.101", 1883, 60)
+# Subscribe to topics
+client2.subscribe("home/ground/front_room/front_lights")
+client2.subscribe("home/ground/front_room/rear_lights")
+topic = "home/ground/front_room/front_lights_rm"
+# Make action on message received
+client2.on_message=on_message
+# Main loop 2 execute forever
+while True:
+	clkState = GPIO.input(clk)
+	dtState = GPIO.input(dt)
+	btnState = GPIO.input(butn)
+	if clkState != clkLastState:
+		if dtState != clkState:
+			counter += 1
+		else:
+			counter -= 1
+		if counter < 0:
+			counter = 0
+		if counter > 100:
+			counter = 100
+		# On change set flag
+		pwm_has_changed = 1
+		#Make counter info available to block miner, don't wait for confirmation
+		clkLastState = clkState
+	if btnState != btnLastState:
+		btnLastState = btnState
+		pwm_has_changed = 1
+	#client.publish("home/ground/front_room/front_lights_rm", payload=count$
+	if pwm_has_changed == 1:
+		client.publish(topic, payload=counter, qos=0, retain=True)
+		# On change reset flag
+		pwm_has_changed = 0
+		print counter
+		print btnState
+	sleep(0.0005)
 
