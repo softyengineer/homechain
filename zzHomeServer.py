@@ -71,15 +71,23 @@ import paho.mqtt.client as mqtt
 import smtplib
 from email.mime.text import MIMEText
 from time import sleep
+from multiprocessing import Process,Pipe
+
 counter = config.pwm_gnd_front_lights
 pwm_gnd_front_lights_local = 0
 pwm_has_changed = 1
 billionth_loop = config.billionth_loop
 # On change detected modify pwm global value and set flag
+
+def f(conn):
+	conn.send(1)
+	conn.close()
+
 def on_message(client, userdata, message):
 	counter = message.payload.decode("utf-8")
 	pwm_has_changed = 1
-def billionth_email():
+
+def on_billionth():
 	smtp_ssl_host = 'mail.tomdwyer.co.uk'  # smtp.mail.yahoo.com
 	smtp_ssl_port = 465
 	username = 'homechain@tomdwyer.co.uk'
@@ -115,7 +123,7 @@ while True:
 		pwm_has_changed = 0
 		print pwm_gnd_front_lights_local
 		if billionth_loop == 1:
-			billionth_email
+			on_billionth
 			billionth_loop = 0
 	sleep(0.01)
 ################### ~/bin/homechain/python2.py contents ################### python2.py contents

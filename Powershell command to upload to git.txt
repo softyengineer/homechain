@@ -1,0 +1,4 @@
+git remote add origin https://github.com/softyengineer/homechain.git
+
+
+git push -u origin master
